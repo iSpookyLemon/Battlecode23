@@ -23,13 +23,14 @@ public strictfp class RobotPlayer {
      */
     static int turnCount = 0;
     static RobotController rc;
+    static Direction moveDirection;
     /**
      * A random number generator.
      * We will use this RNG to make some random moves. The Random class is provided by the java.util.Random
      * import at the top of this file. Here, we *seed* the RNG with a constant number (6147); this makes sure
      * we get the same sequence of numbers every time this code is run. This is very useful for debugging!
      */
-    static final Random rng = new Random(6147);
+    static final Random rng = new Random();
 
     /** Array containing all the possible movement directions. */
     static final Direction[] directions = {
@@ -119,5 +120,81 @@ public strictfp class RobotPlayer {
         }
 
         // Your code should never reach here (unless it's intentional)! Self-destruction imminent...
-    } 
+    }
+
+    public static int[] senseIslands() {
+        return rc.senseNearbyIslands();
+    }
+
+    public static void moveTo(MapLocation end) throws GameActionException {
+        if (rc.isMovementReady()) {
+            Direction dir = rc.getLocation().directionTo(end);
+            Direction left = dir;
+            Direction right = dir;
+            for (int i = 0; i < 3; i++) {
+                if (rc.canMove(left)) {
+                    rc.move(left);
+                }
+                if (rc.canMove(right)) {
+                    rc.move(right);
+                }
+                left = left.rotateLeft();
+                right = right.rotateRight();
+            }
+        }
+    }
+
+    public static void moveTo(Direction dir) throws GameActionException {
+        if (rc.isMovementReady()) {
+            Direction left = dir;
+            Direction right = dir;
+            for (int i = 0; i < 3; i++) {
+                if (rc.canMove(left)) {
+                    rc.move(left);
+                }
+                if (rc.canMove(right)) {
+                    rc.move(right);
+                }
+                left = left.rotateLeft();
+                right = right.rotateRight();
+            }
+        }
+    }
+
+    public static Direction atWall() throws GameActionException {
+        for (int i = 0; i < 8; i += 2) {
+            if (!rc.onTheMap(rc.getLocation().add(directions[i]))) {
+                return directions[i];
+            }
+        }
+        return null;
+    }
+
+    public static void moveRandomly() throws GameActionException {
+        Direction wallDirection = atWall();
+        if (wallDirection != null) {
+            moveDirection = wallDirection.opposite();
+        }
+        if (turnCount % 10 == 0) {
+            int num = rng.nextInt(2);
+            if (num == 0) {
+                moveDirection = moveDirection.rotateLeft();
+            } else {
+                moveDirection = moveDirection.rotateRight();
+            }
+        }
+        moveTo(moveDirection);
+    }
+
+    public static MapLocation getHQLoc() throws GameActionException {
+        RobotInfo[] robots = rc.senseNearbyRobots(8, rc.getTeam());
+        int minDistance = Integer.MAX_VALUE;
+        MapLocation loc = null;
+        for (RobotInfo robot : robots) {
+            if (robot.getType() == RobotType.HEADQUARTERS && rc.getLocation().distanceSquaredTo(robot.getLocation()) < minDistance) {
+                loc = robot.getLocation();
+            }
+        }
+        return loc;
+    }
 }

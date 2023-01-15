@@ -2,8 +2,12 @@ package maggi1;
 import battlecode.common.*;
 
 public class Launcher extends RobotPlayer {
+
+    public static MapLocation hq;
+
     Launcher() throws GameActionException {
-        
+        hq = getHQLoc();
+        moveDirection = rc.getLocation().directionTo(hq);
     }
 
     void runLauncher() throws GameActionException {
@@ -11,9 +15,9 @@ public class Launcher extends RobotPlayer {
         int radius = rc.getType().actionRadiusSquared;
         Team opponent = rc.getTeam().opponent();
         RobotInfo[] enemies = rc.senseNearbyRobots(radius, opponent);
-        if (enemies.length >= 0) {
-            // MapLocation toAttack = enemies[0].location;
-            MapLocation toAttack = rc.getLocation().add(Direction.EAST);
+        if (enemies.length > 0) {
+            MapLocation toAttack = enemies[0].location;
+            //MapLocation toAttack = rc.getLocation().add(Direction.EAST);
 
             if (rc.canAttack(toAttack)) {
                 rc.setIndicatorString("Attacking");        
@@ -22,9 +26,6 @@ public class Launcher extends RobotPlayer {
         }
 
         // Also try to move randomly.
-        Direction dir = directions[rng.nextInt(directions.length)];
-        if (rc.canMove(dir)) {
-            rc.move(dir);
-        }
+        moveRandomly();
     }
 }
