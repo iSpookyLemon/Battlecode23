@@ -2,12 +2,7 @@ package maggi2_1;
 
 import battlecode.common.*;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 
 /**
  * RobotPlayer is the class that describes your main robot strategy.
@@ -56,7 +51,7 @@ public strictfp class RobotPlayer {
 
         // Hello world! Standard output is very useful for debugging.
         // Everything you say here will be directly viewable in your terminal when you run a match!
-        System.out.println("I'm a " + rc.getType() + " and I just got created! I have health " + rc.getHealth());
+        //System.out.println("I'm a " + rc.getType() + " and I just got created! I have health " + rc.getHealth());
 
         // You can also use indicators to save debug notes in replays.
         rc.setIndicatorString("Hello world!");
@@ -80,7 +75,6 @@ public strictfp class RobotPlayer {
             // This code runs during the entire lifespan of the robot, which is why it is in an infinite
             // loop. If we ever leave this loop and return from run(), the robot dies! At the end of the
             // loop, we call Clock.yield(), signifying that we've done everything we want to do.
-
             turnCount += 1;  // We have now been alive for one more turn!
 
             // Try/catch blocks stop unhandled exceptions, which cause your robot to explode.
@@ -129,6 +123,36 @@ public strictfp class RobotPlayer {
     public static void moveTo(MapLocation end) throws GameActionException {
         Direction dir = rc.getLocation().directionTo(end);
         moveTo(dir);
+    }
+
+    public static void pathfind(MapLocation end, int visionRadius) throws GameActionException {
+        if (!end.isWithinDistanceSquared(rc.getLocation(), visionRadius)) {
+            double slope = end.y - rc.getLocation().y / (end.x - rc.getLocation().x);
+            int newx = (int) Math.sqrt(visionRadius / (1 + slope * slope));
+            int newy = (int) (slope * newx);
+            end = new MapLocation(newx, newy);
+        }
+
+        ArrayDeque<MapLocation> queue = new ArrayDeque<MapLocation>();
+        HashSet<MapLocation> visited = new HashSet<MapLocation>();
+        queue.add(rc.getLocation());
+        visited.add(rc.getLocation());
+        while (!queue.isEmpty()) {
+            MapLocation current = queue.poll();
+            if (current == end) {
+                break;
+            }
+            for (int i = 0; i < 8; i += 2) {
+                MapLocation newLoc = rc.getLocation().add(directions[i]);
+                if (!visited.contains(newLoc) && newLoc.isWithinDistanceSquared(rc.getLocation(), visionRadius)) {
+                    visited.add(newLoc);
+                    MapInfo info = rc.senseMapInfo(newLoc);
+                    if (info.isPassable()) {
+                        queue.add(newLoc);
+                    }
+                }
+            }
+        }
     }
 
     public static void moveTo(Direction dir) throws GameActionException {
